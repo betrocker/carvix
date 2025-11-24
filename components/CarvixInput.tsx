@@ -20,7 +20,10 @@ export function CarvixInput({
   style,
   ...props
 }: CarvixInputProps) {
-  const { theme } = useCarvixTheme();
+  const { theme, mode } = useCarvixTheme();
+
+  const placeholderColor =
+    mode === "light" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.45)";
 
   return (
     <View className="mb-5">
@@ -44,7 +47,7 @@ export function CarvixInput({
           <Ionicons
             name={leftIcon}
             size={20}
-            color={theme.colors.textMuted}
+            color={theme.colors.mutedText}
             style={{ marginRight: 10 }}
           />
         )}
@@ -60,7 +63,7 @@ export function CarvixInput({
             },
             style,
           ]}
-          placeholderTextColor={theme.colors.textMuted}
+          placeholderTextColor={placeholderColor}
         />
 
         {/* RIGHT ICON */}
@@ -69,7 +72,7 @@ export function CarvixInput({
             <Ionicons
               name={rightIcon}
               size={20}
-              color={theme.colors.textMuted}
+              color={theme.colors.mutedText}
             />
           </Pressable>
         )}

@@ -1,3 +1,5 @@
+import i18n from "@/i18n";
+import { resolveErrorKey } from "@/i18n/errorMap";
 import { supabase } from "@/lib/supabase";
 import React, {
   createContext,
@@ -19,6 +21,20 @@ type AuthContextValue = {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
+
+function translateAuthError(err: unknown): string {
+  if (!err) return i18n.t("errors.generic");
+
+  const message =
+    err instanceof Error
+      ? err.message
+      : typeof err === "string"
+        ? err
+        : JSON.stringify(err);
+
+  const key = resolveErrorKey(message);
+  return i18n.t(key);
+}
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
@@ -98,11 +114,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     });
 
     if (error) {
-      throw new Error(error.message);
+      // koristi raw supabase error za mapiranje
+      throw new Error(translateAuthError(error));
     }
 
     if (!data.user) {
-      throw new Error("Neuspela prijava.");
+      // naš interni fallback
+      throw new Error(translateAuthError("Neuspela prijava."));
     }
 
     setUser({
@@ -118,15 +136,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
     });
 
     if (error) {
-      throw new Error(error.message);
+      throw new Error(translateAuthError(error));
     }
 
     if (!data.user) {
-      throw new Error("Neuspela registracija.");
+      throw new Error(translateAuthError("Neuspela registracija."));
     }
 
-    // NE radimo setUser ovde
-    // Ako baš želiš dodatni safety:
+    // NE setujemo user-a odmah; samo se odjavimo ako nešto "zapne"
     await supabase.auth.signOut();
   };
 

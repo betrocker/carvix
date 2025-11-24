@@ -1,4 +1,5 @@
 import { AuthProvider, useAuth } from "@/context/AuthProvider";
+import "@/i18n";
 import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -6,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { LanguageProvider } from "@/context/LanguageProvider";
 import { CarvixThemeProvider, useCarvixTheme } from "@/theme/ThemeProvider";
 import "../global.css";
 
@@ -65,9 +67,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <CarvixThemeProvider>
-        <AuthProvider>
-          <ThemedRoot />
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <ThemedRoot />
+          </AuthProvider>
+        </LanguageProvider>
       </CarvixThemeProvider>
     </SafeAreaProvider>
   );

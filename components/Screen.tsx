@@ -7,7 +7,7 @@ export function Screen({ children }: PropsWithChildren) {
 
   return (
     <SafeAreaView
-      edges={["top", "bottom"]}
+      edges={["top", "left", "right"]}
       style={{
         flex: 1,
         backgroundColor: theme.colors.background,

@@ -3,6 +3,7 @@ import { useCarvixTheme } from "@/theme/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Animated,
   LayoutChangeEvent,
@@ -19,6 +20,7 @@ export function CarvixTabBar({
 }: BottomTabBarProps) {
   const { theme, mode } = useCarvixTheme();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const barBackground = mode === "light" ? "#F3F4F6" : theme.colors.card;
   const barBorderColor =
@@ -111,7 +113,26 @@ export function CarvixTabBar({
         >
           {state.routes.map((route, index) => {
             const { options } = descriptors[route.key];
-            const label = options.tabBarLabel ?? options.title ?? route.name;
+            let labelKey = "";
+
+            switch (route.name) {
+              case "index":
+                labelKey = "tabs.home";
+                break;
+              case "garage":
+                labelKey = "tabs.garage";
+                break;
+              case "stats":
+                labelKey = "tabs.stats";
+                break;
+              case "settings":
+                labelKey = "tabs.settings";
+                break;
+              default:
+                labelKey = "";
+            }
+
+            const label = labelKey ? t(labelKey) : route.name;
 
             const isFocused = state.index === index;
 

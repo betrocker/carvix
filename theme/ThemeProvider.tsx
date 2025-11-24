@@ -1,4 +1,3 @@
-// theme/ThemeProvider.tsx
 import { createContext, PropsWithChildren, useContext, useState } from "react";
 import { CarvixColors } from "./colors";
 
@@ -7,49 +6,63 @@ export type CarvixThemeMode = "light" | "dark";
 export interface CarvixTheme {
   colors: {
     background: string;
+    backgroundSecondary: string;
     card: string;
+
     text: string;
     mutedText: string;
 
-    // aliasi zbog starih komponenti
-    textMuted: string;
     primary: string;
     accent: string;
-    backgroundSecondary: string;
 
+    border: string;
+
+    success: string;
+    warning: string;
     danger: string;
+    info: string;
   };
 }
 
 const LightTheme: CarvixTheme = {
   colors: {
     background: CarvixColors.lightBg,
+    backgroundSecondary: CarvixColors.grey100,
     card: CarvixColors.lightCard,
-    text: CarvixColors.graphite,
-    mutedText: CarvixColors.titaniumGrey,
 
-    textMuted: CarvixColors.titaniumGrey, // alias
+    text: CarvixColors.grey900,
+    mutedText: CarvixColors.grey500,
+
     primary: CarvixColors.orange,
-    accent: CarvixColors.orange, // za button shadow itd.
-    backgroundSecondary: CarvixColors.lightCard,
+    accent: CarvixColors.orange,
 
-    danger: CarvixColors.errorRed,
+    border: "rgba(0,0,0,0.08)",
+
+    success: CarvixColors.success,
+    warning: CarvixColors.warning,
+    danger: CarvixColors.error,
+    info: CarvixColors.info,
   },
 };
 
 const DarkTheme: CarvixTheme = {
   colors: {
     background: CarvixColors.darkBg,
+    backgroundSecondary: CarvixColors.darkCard,
     card: CarvixColors.darkCard,
-    text: "#FFFFFF",
-    mutedText: CarvixColors.titaniumGrey,
 
-    textMuted: CarvixColors.titaniumGrey, // alias
+    text: "#FFFFFF",
+    mutedText: CarvixColors.grey400,
+
     primary: CarvixColors.orange,
     accent: CarvixColors.orange,
-    backgroundSecondary: CarvixColors.darkCard,
 
-    danger: CarvixColors.errorRed,
+    border: "rgba(255,255,255,0.12)",
+
+    success: CarvixColors.success,
+    warning: CarvixColors.warning,
+    danger: CarvixColors.error,
+    info: CarvixColors.info,
   },
 };
 

@@ -16,13 +16,16 @@ import {
   View,
 } from "react-native";
 
-type LanguageCode = "en" | "sr";
+import { useLanguage } from "@/context/LanguageProvider";
+import type { LanguageCode } from "@/i18n";
+import { useTranslation } from "react-i18next";
 
 export default function SettingsScreen() {
   const { theme, mode, toggleMode } = useCarvixTheme();
   const { user, signOut } = useAuth();
+  const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
 
-  const [language, setLanguage] = useState<LanguageCode>("en");
   const [premiumVisible, setPremiumVisible] = useState(false);
 
   const isDark = mode === "dark";
@@ -33,29 +36,22 @@ export default function SettingsScreen() {
     "1.0.0";
 
   const buildNumber =
-    // Android / iOS build (ako nema, fallback)
     (Constants.expoConfig as any)?.android?.versionCode?.toString() ??
     (Constants.expoConfig as any)?.ios?.buildNumber ??
     "1";
 
-  // TODO: Ovde kasnije ubaciš pravog user-a iz Auth context-a
   const userEmail = user?.email ?? "Unknown user";
-
-  const handleLogout = () => {
-    // TODO: zameni ovim tvojim logout-om (Clerk / Supabase / custom)
-    console.log("Logout pressed");
-  };
 
   const handleDeleteAccount = () => {
     if (!user) return;
 
     Alert.alert(
-      "Delete account",
-      "This will permanently delete your account and all your garage data.",
+      t("dialogs.deleteAccountTitle"),
+      t("dialogs.deleteAccountBody"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("dialogs.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("dialogs.delete"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -70,8 +66,8 @@ export default function SettingsScreen() {
 
               if (error) {
                 Alert.alert(
-                  "Error",
-                  error.message || "Failed to delete account."
+                  t("dialogs.error"),
+                  error.message || t("dialogs.failedDeleteAccount")
                 );
                 return;
               }
@@ -79,7 +75,10 @@ export default function SettingsScreen() {
               await signOut();
             } catch (e: any) {
               console.log("delete-account exception:", e);
-              Alert.alert("Error", e?.message ?? "Unexpected error occurred.");
+              Alert.alert(
+                t("dialogs.error"),
+                e?.message ?? t("dialogs.unexpectedError")
+              );
             }
           },
         },
@@ -88,8 +87,7 @@ export default function SettingsScreen() {
   };
 
   const handleToggleLanguage = (code: LanguageCode) => {
-    setLanguage(code);
-    // TODO: kada ubaciš i18n, ovde pozovi i18n.changeLanguage(code)
+    void setLanguage(code);
   };
 
   return (
@@ -103,7 +101,7 @@ export default function SettingsScreen() {
             color: theme.colors.text,
           }}
         >
-          Settings
+          {t("settings.title")}
         </Text>
 
         {/* APPEARANCE SECTION */}
@@ -116,11 +114,10 @@ export default function SettingsScreen() {
           }}
         >
           <SectionLabel
-            label="Appearance"
+            label={t("settings.appearance")}
             themeTextColor={theme.colors.mutedText}
           />
 
-          {/* Dark mode row */}
           <Pressable
             onPress={toggleMode}
             style={{
@@ -137,7 +134,7 @@ export default function SettingsScreen() {
                   color: theme.colors.text,
                 }}
               >
-                Dark Mode
+                {t("settings.darkModeTitle")}
               </Text>
               <Text
                 style={{
@@ -146,7 +143,9 @@ export default function SettingsScreen() {
                   color: theme.colors.mutedText,
                 }}
               >
-                {isDark ? "Enabled" : "Disabled"}
+                {isDark
+                  ? t("settings.darkModeEnabled")
+                  : t("settings.darkModeDisabled")}
               </Text>
             </View>
 
@@ -172,7 +171,7 @@ export default function SettingsScreen() {
           }}
         >
           <SectionLabel
-            label="Language"
+            label={t("settings.language")}
             themeTextColor={theme.colors.mutedText}
           />
 
@@ -191,7 +190,7 @@ export default function SettingsScreen() {
                   color: theme.colors.text,
                 }}
               >
-                App Language
+                {t("settings.appLanguage")}
               </Text>
               <Text
                 style={{
@@ -200,11 +199,12 @@ export default function SettingsScreen() {
                   color: theme.colors.mutedText,
                 }}
               >
-                {language === "en" ? "English" : "Srpski"}
+                {language === "en"
+                  ? t("settings.english")
+                  : t("settings.serbian")}
               </Text>
             </View>
 
-            {/* iOS-like segmented toggle */}
             <View
               style={{
                 flexDirection: "row",
@@ -244,11 +244,10 @@ export default function SettingsScreen() {
           }}
         >
           <SectionLabel
-            label="Account"
+            label={t("settings.account")}
             themeTextColor={theme.colors.mutedText}
           />
 
-          {/* Email */}
           <View
             style={{
               flexDirection: "row",
@@ -264,7 +263,7 @@ export default function SettingsScreen() {
                   color: theme.colors.text,
                 }}
               >
-                Signed in as
+                {t("settings.signedInAs")}
               </Text>
               <Text
                 style={{
@@ -278,7 +277,6 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          {/* Logout */}
           <Pressable
             onPress={signOut}
             style={{
@@ -295,7 +293,7 @@ export default function SettingsScreen() {
                   color: theme.colors.text,
                 }}
               >
-                Log out
+                {t("settings.logoutTitle")}
               </Text>
               <Text
                 style={{
@@ -304,12 +302,11 @@ export default function SettingsScreen() {
                   color: theme.colors.mutedText,
                 }}
               >
-                You will need to sign in again
+                {t("settings.logoutSubtitle")}
               </Text>
             </View>
           </Pressable>
 
-          {/* Delete account */}
           <Pressable
             onPress={handleDeleteAccount}
             style={{
@@ -323,10 +320,10 @@ export default function SettingsScreen() {
                 style={{
                   fontSize: 16,
                   fontWeight: "500",
-                  color: theme.colors.danger, // npr. CarvixColors.errorRed
+                  color: theme.colors.danger,
                 }}
               >
-                Delete account
+                {t("settings.deleteTitle")}
               </Text>
               <Text
                 style={{
@@ -335,7 +332,7 @@ export default function SettingsScreen() {
                   color: theme.colors.mutedText,
                 }}
               >
-                This will permanently remove your data
+                {t("settings.deleteSubtitle")}
               </Text>
             </View>
           </Pressable>
@@ -351,7 +348,7 @@ export default function SettingsScreen() {
           }}
         >
           <SectionLabel
-            label="Carvix Premium"
+            label={t("settings.premiumSection")}
             themeTextColor={theme.colors.mutedText}
           />
 
@@ -371,7 +368,7 @@ export default function SettingsScreen() {
                   color: theme.colors.text,
                 }}
               >
-                View benefits
+                {t("settings.premiumTitle")}
               </Text>
               <Text
                 style={{
@@ -380,7 +377,7 @@ export default function SettingsScreen() {
                   color: theme.colors.mutedText,
                 }}
               >
-                Advanced stats, unlimited vehicles, export & more
+                {t("settings.premiumSubtitle")}
               </Text>
             </View>
           </Pressable>
@@ -395,7 +392,10 @@ export default function SettingsScreen() {
             paddingVertical: 4,
           }}
         >
-          <SectionLabel label="About" themeTextColor={theme.colors.mutedText} />
+          <SectionLabel
+            label={t("settings.about")}
+            themeTextColor={theme.colors.mutedText}
+          />
 
           <View
             style={{
@@ -411,7 +411,7 @@ export default function SettingsScreen() {
                 color: theme.colors.mutedText,
               }}
             >
-              Version
+              {t("settings.versionLabel")}
             </Text>
             <Text
               style={{
@@ -437,7 +437,7 @@ export default function SettingsScreen() {
                 color: theme.colors.mutedText,
               }}
             >
-              Made for
+              {t("settings.madeFor")}
             </Text>
             <Text
               style={{
@@ -445,7 +445,7 @@ export default function SettingsScreen() {
                 color: theme.colors.text,
               }}
             >
-              Carvix Garage Manager
+              {t("common.appName")}
             </Text>
           </View>
         </View>
@@ -493,7 +493,7 @@ export default function SettingsScreen() {
                 marginBottom: 8,
               }}
             >
-              Carvix Premium
+              {t("settings.premiumTitle")}
             </Text>
 
             <Text
@@ -503,28 +503,26 @@ export default function SettingsScreen() {
                 marginBottom: 16,
               }}
             >
-              Unlock advanced analytics, export reports, and manage an unlimited
-              number of vehicles in your garage.
+              {t("settings.premiumSubtitle")}
             </Text>
 
             <View style={{ gap: 8, marginBottom: 20 }}>
               <Bullet
-                text="Unlimited vehicles and service history"
+                text={t("settings.premiumBullet1")}
                 color={theme.colors.text}
               />
               <Bullet
-                text="Advanced cost & service analytics"
+                text={t("settings.premiumBullet2")}
                 color={theme.colors.text}
               />
               <Bullet
-                text="Export to PDF/CSV (coming soon)"
+                text={t("settings.premiumBullet3")}
                 color={theme.colors.text}
               />
             </View>
 
             <TouchableOpacity
               onPress={() => {
-                // TODO: ovde će ići RevenueCat / kupovina
                 console.log("Upgrade to Premium");
               }}
               style={{
@@ -542,7 +540,7 @@ export default function SettingsScreen() {
                   color: "#fff",
                 }}
               >
-                Upgrade (placeholder)
+                {t("settings.premiumUpgrade")}
               </Text>
             </TouchableOpacity>
 
@@ -560,7 +558,7 @@ export default function SettingsScreen() {
                   color: theme.colors.mutedText,
                 }}
               >
-                Maybe later
+                {t("settings.premiumLater")}
               </Text>
             </TouchableOpacity>
           </View>

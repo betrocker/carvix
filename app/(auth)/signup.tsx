@@ -5,11 +5,13 @@ import { useAuth } from "@/context/AuthProvider";
 import { useCarvixTheme } from "@/theme/ThemeProvider";
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Alert, Pressable, Text, View } from "react-native";
 
 export default function SignupScreen() {
   const { signUp } = useAuth();
   const { theme } = useCarvixTheme();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,18 +25,30 @@ export default function SignupScreen() {
 
   const handleSignup = async () => {
     setError(null);
+
+    // lokalna provera lozinke
+    if (password !== confirm) {
+      setError(t("errors.passwordsDontMatch", "Lozinke se ne poklapaju."));
+      return;
+    }
+
     setLoading(true);
     try {
       await signUp(email.trim(), password);
 
       Alert.alert(
-        "Proveri email",
-        "Poslali smo ti link za potvrdu naloga. Nakon potvrde, prijavi se sa svojim emailom i lozinkom."
+        t("dialogs.checkEmailTitle", "Proveri email"),
+        t(
+          "dialogs.checkEmailBody",
+          "Poslali smo ti link za potvrdu naloga. Nakon potvrde, prijavi se sa svojim emailom i lozinkom."
+        )
       );
 
       router.replace("/(auth)/login");
     } catch (e: any) {
-      setError(e.message ?? "Neuspela registracija.");
+      setError(
+        e.message ?? t("errors.registerFailed", "Neuspela registracija.")
+      );
     } finally {
       setLoading(false);
     }
@@ -48,14 +62,17 @@ export default function SignupScreen() {
           style={{ color: theme.colors.text }}
           className="font-inter text-3xl font-semibold mb-2"
         >
-          Napravi nalog
+          {t("auth.signupHeader", "Napravi nalog")}
         </Text>
 
         <Text
-          style={{ color: theme.colors.textMuted }}
+          style={{ color: theme.colors.mutedText ?? theme.colors.text }}
           className="font-inter text-base mb-8"
         >
-          Samo par koraka i spreman si da vodiš evidenciju svojih vozila.
+          {t(
+            "auth.signupSubtitle",
+            "Samo par koraka i spreman si da vodiš evidenciju svojih vozila."
+          )}
         </Text>
 
         {error && (
@@ -64,8 +81,8 @@ export default function SignupScreen() {
 
         {/* EMAIL */}
         <CarvixInput
-          label="Email"
-          placeholder="you@example.com"
+          label={t("auth.email", "Email")}
+          placeholder={t("auth.emailPlaceholder", "you@example.com")}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -74,8 +91,8 @@ export default function SignupScreen() {
 
         {/* PASSWORD */}
         <CarvixInput
-          label="Lozinka"
-          placeholder="••••••••"
+          label={t("auth.password", "Lozinka")}
+          placeholder={t("auth.passwordPlaceholder", "••••••••")}
           secureTextEntry={!showPassword}
           value={password}
           onChangeText={setPassword}
@@ -85,8 +102,8 @@ export default function SignupScreen() {
 
         {/* CONFIRM PASSWORD */}
         <CarvixInput
-          label="Potvrdi lozinku"
-          placeholder="Ponovite lozinku"
+          label={t("auth.confirmPassword", "Potvrdi lozinku")}
+          placeholder={t("auth.confirmPasswordPlaceholder", "Ponovite lozinku")}
           secureTextEntry={!showConfirmPassword}
           value={confirm}
           onChangeText={setConfirm}
@@ -96,7 +113,7 @@ export default function SignupScreen() {
 
         {/* BUTTON */}
         <CarvixButton
-          label="Registruj se"
+          label={t("auth.signupButton", "Registruj se")}
           onPress={handleSignup}
           loading={loading}
           style={{ marginTop: 8 }}
@@ -111,8 +128,10 @@ export default function SignupScreen() {
             style={{ color: theme.colors.text }}
             className="font-inter text-base"
           >
-            Već imaš nalog?{" "}
-            <Text className="text-carvix-orange font-semibold">Prijavi se</Text>
+            {t("auth.haveAccount", "Već imaš nalog?")}{" "}
+            <Text className="text-carvix-orange font-semibold">
+              {t("auth.login", "Prijavi se")}
+            </Text>
           </Text>
         </Pressable>
       </View>

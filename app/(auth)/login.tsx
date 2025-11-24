@@ -5,11 +5,13 @@ import { useAuth } from "@/context/AuthProvider";
 import { useCarvixTheme } from "@/theme/ThemeProvider";
 import { router } from "expo-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, Text, View } from "react-native";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const { theme } = useCarvixTheme();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +26,7 @@ export default function LoginScreen() {
       await signIn(email.trim(), password);
       router.replace("/");
     } catch (e: any) {
-      setError(e.message ?? "Neuspela prijava.");
+      setError(e.message ?? t("errors.loginFailed"));
     } finally {
       setLoading(false);
     }
@@ -38,14 +40,17 @@ export default function LoginScreen() {
           style={{ color: theme.colors.text }}
           className="font-inter text-3xl font-semibold mb-2"
         >
-          Dobrodošao nazad
+          {t("auth.loginHeader", "Dobrodošao nazad")}
         </Text>
 
         <Text
           style={{ color: theme.colors.mutedText }}
           className="font-inter text-base mb-8"
         >
-          Prijavi se da nastaviš sa Carvix Garage Managerom.
+          {t(
+            "auth.loginSubtitle",
+            "Prijavi se da nastaviš sa Carvix Garage Managerom."
+          )}
         </Text>
 
         {error && (
@@ -54,8 +59,8 @@ export default function LoginScreen() {
 
         {/* EMAIL */}
         <CarvixInput
-          label="Email"
-          placeholder="you@example.com"
+          label={t("auth.email", "Email")}
+          placeholder={t("auth.emailPlaceholder", "you@example.com")}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -64,8 +69,8 @@ export default function LoginScreen() {
 
         {/* PASSWORD */}
         <CarvixInput
-          label="Lozinka"
-          placeholder="••••••••"
+          label={t("auth.password", "Lozinka")}
+          placeholder={t("auth.passwordPlaceholder", "••••••••")}
           secureTextEntry={!showPassword}
           value={password}
           onChangeText={setPassword}
@@ -75,7 +80,7 @@ export default function LoginScreen() {
 
         {/* BUTTON */}
         <CarvixButton
-          label="Prijavi se"
+          label={t("auth.loginButton", "Prijavi se")}
           onPress={handleLogin}
           loading={loading}
           style={{ marginTop: 8 }}
@@ -90,9 +95,9 @@ export default function LoginScreen() {
             style={{ color: theme.colors.text }}
             className="font-inter text-base"
           >
-            Nemaš nalog?{" "}
+            {t("auth.noAccount", "Nemaš nalog?")}{" "}
             <Text className="text-carvix-orange font-semibold">
-              Registruj se
+              {t("auth.register", "Registruj se")}
             </Text>
           </Text>
         </Pressable>
