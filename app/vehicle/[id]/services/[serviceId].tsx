@@ -1,5 +1,6 @@
 import { CarvixButton } from "@/components/CarvixButton";
 import { Screen } from "@/components/Screen";
+import { useCurrency } from "@/context/CurrencyProvider";
 import { supabase } from "@/lib/supabase";
 import { useCarvixTheme } from "@/theme/ThemeProvider";
 import { ServiceRecord } from "@/types/service";
@@ -28,6 +29,7 @@ export default function ServiceDetailScreen() {
   }>();
   const { theme } = useCarvixTheme();
   const { t } = useTranslation();
+  const { currency: userCurrency, convertCurrency } = useCurrency();
   const [service, setService] = useState<ServiceRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -104,9 +106,13 @@ export default function ServiceDetailScreen() {
     });
   };
 
-  const formatCurrency = (amount?: number, currency?: string) => {
+  const formatCurrency = (amount?: number, serviceCurrency?: string) => {
     if (!amount) return "-";
-    return `${amount.toLocaleString("sr-RS")} ${currency || "RSD"}`;
+
+    // Konvertuj u korisnikovu valutu
+    const convertedAmount = convertCurrency(amount, serviceCurrency || "RSD");
+
+    return `${Math.round(convertedAmount).toLocaleString("sr-RS")} ${userCurrency}`;
   };
 
   if (loading) {
@@ -319,12 +325,18 @@ export default function ServiceDetailScreen() {
         {/* Action buttons */}
         <View style={{ gap: 12, marginTop: 8 }}>
           <CarvixButton
+            label={t("serviceDetail.edit")}
+            onPress={() =>
+              router.push(`/vehicle/${id}/services/${serviceId}/edit`)
+            }
+          />
+          <CarvixButton
             label={t("serviceDetail.delete")}
             onPress={handleDelete}
             loading={deleting}
-            icon="trash-outline"
-            style={{
-              backgroundColor: theme.colors.danger,
+            variant="secondary"
+            textStyle={{
+              color: theme.colors.danger,
             }}
           />
         </View>

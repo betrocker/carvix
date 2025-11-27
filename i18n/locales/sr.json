@@ -1,6 +1,7 @@
 {
   "common": {
-    "appName": "Carvix Garage Manager"
+    "appName": "Carvix Garage Manager",
+    "cancel": "Otkaži"
   },
   "auth": {
     "loginHeader": "Dobrodošao nazad",
@@ -88,6 +89,8 @@
     "vehicleDetails": "Detalji vozila"
   },
   "home": {
+    "selectVehicle": "Izaberi vozilo",
+    "noVehicles": "Nema vozila",
     "title": "Carvix Garage Manager",
     "subtitle": "Brzi pregled tvoje garaže.",
     "totalVehicles": "Ukupno vozila",
@@ -225,7 +228,7 @@
     "serviceTitlePlaceholder": "Redovan servis",
     "date": "Datum",
     "odometer": "Kilometraža",
-    "cost": "Trošak (RSD)",
+    "cost": "Trošak",
     "serviceProvider": "Servis",
     "serviceProviderPlaceholder": "Auto servis Petrović",
     "description": "Opis",
@@ -240,6 +243,7 @@
     "errorSaving": "Nije moguće sačuvati servisni zapis."
   },
   "serviceDetail": {
+    "edit": "Izmeni servis podatke",
     "error": "Greška",
     "errorLoading": "Nije moguće učitati servisni zapis.",
     "errorDeleting": "Nije moguće obrisati servisni zapis.",
@@ -253,9 +257,32 @@
     "serviceProvider": "Servis",
     "description": "Opis",
     "notes": "Napomene",
-    "delete": "Obriši",
+    "delete": "Obriši servis",
     "deleteTitle": "Obriši servisni zapis",
     "deleteMessage": "Da li ste sigurni da želite da obrišete ovaj servisni zapis?",
     "cancel": "Otkaži"
+  },
+  "editService": {
+    "title": "Izmeni servis",
+    "serviceType": "Tip servisa",
+    "selectServiceType": "Izaberi tip",
+    "serviceTitle": "Naslov",
+    "serviceTitlePlaceholder": "Zamena ulja",
+    "date": "Datum",
+    "odometer": "Kilometraža",
+    "cost": "Trošak",
+    "serviceProvider": "Servis",
+    "serviceProviderPlaceholder": "Auto servis Marković",
+    "description": "Opis",
+    "descriptionPlaceholder": "Šta je urađeno...",
+    "notes": "Napomene",
+    "notesPlaceholder": "Dodatne napomene...",
+    "save": "Sačuvaj izmene",
+    "cancel": "Otkaži",
+    "validationTitle": "Greška",
+    "validationMessage": "Naslov i datum su obavezni",
+    "error": "Greška",
+    "errorLoading": "Greška pri učitavanju servisa",
+    "errorSaving": "Greška pri čuvanju izmena"
   }
 }

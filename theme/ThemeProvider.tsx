@@ -8,6 +8,7 @@ export interface CarvixTheme {
     background: string;
     backgroundSecondary: string;
     card: string;
+    buttonbg: string;
 
     text: string;
     mutedText: string;
@@ -29,6 +30,7 @@ const LightTheme: CarvixTheme = {
     background: CarvixColors.lightBg,
     backgroundSecondary: CarvixColors.grey100,
     card: CarvixColors.lightCard,
+    buttonbg: CarvixColors.buttonlight,
 
     text: CarvixColors.grey900,
     mutedText: CarvixColors.grey500,
@@ -50,6 +52,7 @@ const DarkTheme: CarvixTheme = {
     background: CarvixColors.darkBg,
     backgroundSecondary: CarvixColors.darkCard,
     card: CarvixColors.darkCard,
+    buttonbg: CarvixColors.buttondark,
 
     text: "#FFFFFF",
     mutedText: CarvixColors.grey400,

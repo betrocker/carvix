@@ -1,5 +1,6 @@
 import { CarvixButton } from "@/components/CarvixButton";
 import { Screen } from "@/components/Screen";
+import { useCurrency } from "@/context/CurrencyProvider";
 import { supabase } from "@/lib/supabase";
 import { useCarvixTheme } from "@/theme/ThemeProvider";
 import { ServiceRecord } from "@/types/service";
@@ -35,6 +36,7 @@ export default function ServiceListScreen() {
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { currency: userCurrency, convertCurrency } = useCurrency();
 
   useFocusEffect(
     useCallback(() => {
@@ -76,9 +78,13 @@ export default function ServiceListScreen() {
     });
   };
 
-  const formatCurrency = (amount?: number, currency?: string) => {
+  const formatCurrency = (amount?: number, serviceCurrency?: string) => {
     if (!amount) return "-";
-    return `${amount.toLocaleString("sr-RS")} ${currency || "RSD"}`;
+
+    // Konvertuj u korisnikovu valutu
+    const convertedAmount = convertCurrency(amount, serviceCurrency || "RSD");
+
+    return `${Math.round(convertedAmount).toLocaleString("sr-RS")} ${userCurrency}`;
   };
 
   const renderServiceItem = ({ item }: { item: ServiceRecord }) => (

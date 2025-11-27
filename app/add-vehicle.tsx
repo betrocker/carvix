@@ -361,26 +361,12 @@ export default function AddVehicleScreen() {
               loading={loading}
             />
 
-            <Pressable
+            <CarvixButton
+              label={t("addVehicle.cancel")}
               onPress={() => router.back()}
-              style={{
-                padding: 16,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: theme.colors.border,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  color: theme.colors.text,
-                  fontSize: 16,
-                  fontWeight: "600",
-                }}
-              >
-                {t("addVehicle.cancel")}
-              </Text>
-            </Pressable>
+              loading={loading}
+              variant="secondary"
+            />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

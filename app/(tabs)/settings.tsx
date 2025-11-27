@@ -1,6 +1,7 @@
 // app/(tabs)/settings.tsx
 import { Screen } from "@/components/Screen";
 import { useAuth } from "@/context/AuthProvider";
+import { useCurrency } from "@/context/CurrencyProvider";
 import { supabase } from "@/lib/supabase";
 import { useCarvixTheme } from "@/theme/ThemeProvider";
 import Constants from "expo-constants";
@@ -25,6 +26,7 @@ export default function SettingsScreen() {
   const { user, signOut } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
+  const { currency, setCurrency } = useCurrency();
 
   const [premiumVisible, setPremiumVisible] = useState(false);
 
@@ -226,6 +228,88 @@ export default function SettingsScreen() {
                 label="SR"
                 active={language === "sr"}
                 onPress={() => handleToggleLanguage("sr")}
+                primaryColor={theme.colors.primary}
+                bgColor={theme.colors.card}
+                textColor={theme.colors.text}
+              />
+            </View>
+          </View>
+        </View>
+
+        {/* CURRENCY SECTION */}
+        <View
+          style={{
+            borderRadius: 16,
+            backgroundColor: theme.colors.card,
+            paddingHorizontal: 12,
+            paddingVertical: 4,
+          }}
+        >
+          <SectionLabel
+            label={t("settings.currency", "Valuta")}
+            themeTextColor={theme.colors.mutedText}
+          />
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 12,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "500",
+                  color: theme.colors.text,
+                }}
+              >
+                {t("settings.preferredCurrency", "Preferirana valuta")}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 13,
+                  marginTop: 2,
+                  color: theme.colors.mutedText,
+                }}
+              >
+                {t(
+                  "settings.currencyDescription",
+                  "Troškovi će biti konvertovani"
+                )}
+              </Text>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                borderRadius: 999,
+                borderWidth: 1,
+                borderColor: theme.colors.mutedText,
+                overflow: "hidden",
+              }}
+            >
+              <CurrencyPill
+                label="RSD"
+                active={currency === "RSD"}
+                onPress={() => setCurrency("RSD")}
+                primaryColor={theme.colors.primary}
+                bgColor={theme.colors.card}
+                textColor={theme.colors.text}
+              />
+              <CurrencyPill
+                label="EUR"
+                active={currency === "EUR"}
+                onPress={() => setCurrency("EUR")}
+                primaryColor={theme.colors.primary}
+                bgColor={theme.colors.card}
+                textColor={theme.colors.text}
+              />
+              <CurrencyPill
+                label="USD"
+                active={currency === "USD"}
+                onPress={() => setCurrency("USD")}
                 primaryColor={theme.colors.primary}
                 bgColor={theme.colors.card}
                 textColor={theme.colors.text}
@@ -565,6 +649,45 @@ export default function SettingsScreen() {
         </View>
       </Modal>
     </Screen>
+  );
+}
+
+function CurrencyPill({
+  label,
+  active,
+  onPress,
+  primaryColor,
+  bgColor,
+  textColor,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  primaryColor: string;
+  bgColor: string;
+  textColor: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        backgroundColor: active ? primaryColor : bgColor,
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 12,
+          fontWeight: "600",
+          color: active ? "#fff" : textColor,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 

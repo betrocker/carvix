@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { CurrencyProvider } from "@/context/CurrencyProvider";
 import { LanguageProvider } from "@/context/LanguageProvider";
 import { CarvixThemeProvider, useCarvixTheme } from "@/theme/ThemeProvider";
 import "../global.css";
@@ -68,9 +69,11 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <CarvixThemeProvider>
         <LanguageProvider>
-          <AuthProvider>
-            <ThemedRoot />
-          </AuthProvider>
+          <CurrencyProvider>
+            <AuthProvider>
+              <ThemedRoot />
+            </AuthProvider>
+          </CurrencyProvider>
         </LanguageProvider>
       </CarvixThemeProvider>
     </SafeAreaProvider>

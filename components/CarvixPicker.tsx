@@ -2,6 +2,7 @@ import { useCarvixTheme } from "@/theme/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { CarvixButton } from "./CarvixButton";
 
 type PickerOption = {
   label: string;
@@ -35,32 +36,16 @@ export function CarvixPicker({
         style={{
           color: theme.colors.text,
           marginBottom: 8,
-          fontSize: 16,
-          fontWeight: "600",
         }}
       >
         {label}
       </Text>
 
-      <Pressable
+      <CarvixButton
+        label={selectedOption?.label || placeholder}
         onPress={() => setVisible(true)}
-        style={{
-          backgroundColor: theme.colors.primary,
-          borderRadius: 12,
-          padding: 16,
-          flexDirection: "row",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
-        {selectedOption?.icon && (
-          <Ionicons name={selectedOption.icon} size={22} color="#fff" />
-        )}
-        <Text style={{ color: "#fff", fontSize: 16, fontWeight: "600" }}>
-          {selectedOption?.label || placeholder}
-        </Text>
-      </Pressable>
+        icon={selectedOption?.icon}
+      />
 
       <Modal
         visible={visible}

@@ -2,6 +2,7 @@ import { CarvixButton } from "@/components/CarvixButton";
 import { CarvixInput } from "@/components/CarvixInput";
 import { CarvixPicker } from "@/components/CarvixPicker";
 import { Screen } from "@/components/Screen";
+import { useCurrency } from "@/context/CurrencyProvider";
 import { supabase } from "@/lib/supabase";
 import { useCarvixTheme } from "@/theme/ThemeProvider";
 import { ServiceType } from "@/types/service";
@@ -14,6 +15,7 @@ export default function AddServiceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { theme } = useCarvixTheme();
   const { t } = useTranslation();
+  const { currency } = useCurrency();
   const [saving, setSaving] = useState(false);
 
   // Form states
@@ -88,7 +90,7 @@ export default function AddServiceScreen() {
         service_date: serviceDate,
         odometer: odometer ? parseInt(odometer) : null,
         cost: cost ? parseFloat(cost) : null,
-        currency: "RSD",
+        currency: currency, // Koristi izabranu valutu
         service_provider: serviceProvider || null,
         notes: notes || null,
       };
@@ -161,9 +163,9 @@ export default function AddServiceScreen() {
           keyboardType="numeric"
         />
 
-        {/* Trošak */}
+        {/* Trošak - sa prikazom valute */}
         <CarvixInput
-          label={t("addService.cost")}
+          label={`${t("addService.cost")} (${currency})`}
           placeholder="15000"
           value={cost}
           onChangeText={setCost}
@@ -204,13 +206,11 @@ export default function AddServiceScreen() {
             label={t("addService.save")}
             onPress={handleSave}
             loading={saving}
-            icon="checkmark-circle-outline"
           />
           <CarvixButton
             label={t("addService.cancel")}
             onPress={() => router.back()}
-            variant="outline"
-            icon="close-circle-outline"
+            variant="secondary"
           />
         </View>
       </ScrollView>

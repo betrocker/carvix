@@ -2,6 +2,8 @@ export const CarvixColors = {
   // Brand
   orange: "#F97316",
   flame: "#FB323C",
+  buttonlight: "#7676801f",
+  buttondark: "#7676803d",
 
   // Neutral greys
   grey50: "#F9FAFB",

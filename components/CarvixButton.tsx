@@ -41,7 +41,7 @@ export function CarvixButton({
     variant === "primary"
       ? theme.colors.primary
       : variant === "secondary"
-        ? theme.colors.card
+        ? theme.colors.buttonbg
         : "transparent";
 
   const color = variant === "primary" ? "#ffffff" : theme.colors.text;
@@ -69,7 +69,7 @@ export function CarvixButton({
             <Ionicons name={icon} size={iconSize} color={color} />
           )}
           <Text
-            className="font-inter text-base font-semibold"
+            className="font-inter text-xl font-semibold"
             style={[{ color }, textStyle]}
           >
             {label}
@@ -83,7 +83,7 @@ export function CarvixButton({
 
     return (
       <Text
-        className="font-inter text-base font-semibold"
+        className="font-inter text-xl font-semibold"
         style={[{ color }, textStyle]}
       >
         {label}

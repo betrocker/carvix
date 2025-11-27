@@ -1,6 +1,7 @@
 {
   "common": {
-    "appName": "Carvix Garage Manager"
+    "appName": "Carvix Garage Manager",
+    "cancel": "Cancel"
   },
   "auth": {
     "loginHeader": "Welcome back",
@@ -88,6 +89,8 @@
     "vehicleDetails": "Vehicle Details"
   },
   "home": {
+    "selectVehicle": "Select Vehicle",
+    "noVehicles": "No vehicles",
     "title": "Carvix Garage Manager",
     "subtitle": "Quick overview of your garage.",
     "totalVehicles": "Total vehicles",
@@ -225,7 +228,7 @@
     "serviceTitlePlaceholder": "Regular service",
     "date": "Date",
     "odometer": "Odometer",
-    "cost": "Cost (RSD)",
+    "cost": "Cost",
     "serviceProvider": "Service Provider",
     "serviceProviderPlaceholder": "Auto Service Petrovic",
     "description": "Description",
@@ -240,6 +243,7 @@
     "errorSaving": "Could not save service record."
   },
   "serviceDetail": {
+    "edit": "Edit service data",
     "error": "Error",
     "errorLoading": "Could not load service record.",
     "errorDeleting": "Could not delete service record.",
@@ -253,9 +257,32 @@
     "serviceProvider": "Service Provider",
     "description": "Description",
     "notes": "Notes",
-    "delete": "Delete",
+    "delete": "Delete service",
     "deleteTitle": "Delete Service Record",
     "deleteMessage": "Are you sure you want to delete this service record?",
     "cancel": "Cancel"
+  },
+  "editService": {
+    "title": "Edit Service",
+    "serviceType": "Service Type",
+    "selectServiceType": "Select type",
+    "serviceTitle": "Title",
+    "serviceTitlePlaceholder": "Oil Change",
+    "date": "Date",
+    "odometer": "Odometer",
+    "cost": "Cost",
+    "serviceProvider": "Service Provider",
+    "serviceProviderPlaceholder": "Auto Service Center",
+    "description": "Description",
+    "descriptionPlaceholder": "What was done...",
+    "notes": "Notes",
+    "notesPlaceholder": "Additional notes...",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "validationTitle": "Error",
+    "validationMessage": "Title and date are required",
+    "error": "Error",
+    "errorLoading": "Error loading service",
+    "errorSaving": "Error saving changes"
   }
 }
