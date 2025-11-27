@@ -1,80 +1,148 @@
+import { CarvixButton } from "@/components/CarvixButton";
 import { Screen } from "@/components/Screen";
 import { supabase } from "@/lib/supabase";
 import { useCarvixTheme } from "@/theme/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { Image } from "expo-image";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  FlatList,
-  Pressable,
+  Alert,
+  RefreshControl,
+  ScrollView,
   Text,
   View,
 } from "react-native";
 
-// Types
 type Vehicle = {
   id: string;
+  userid: string;
   name: string;
-  make: string | null;
-  model: string | null;
-  plateNumber: string | null;
-  year: number | null;
-  odometer: number | null;
-};
-
-type Log = {
-  id: string;
+  make: string;
+  model: string;
   type: string;
-  title: string;
-  date: string;
-  cost: number | null;
-  odometer: number | null;
+  platenumber?: string;
+  year?: number;
+  odometer?: number;
+  vin?: string;
+  enginecapacity?: string;
+  loadcapacity?: string;
+  imageurl?: string;
+  created_at: string;
+  updated_at: string;
 };
 
-export default function VehicleDetailsScreen() {
+const getVehicleIcon = (type: string) => {
+  const icons: { [key: string]: keyof typeof Ionicons.glyphMap } = {
+    car: "car",
+    motorcycle: "bicycle",
+    truck: "bus",
+    bicycle: "bicycle-outline",
+    quad: "car-sport",
+    tractor: "trail-sign",
+  };
+  return icons[type] || "car";
+};
+
+export default function VehicleDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { theme } = useCarvixTheme();
   const { t } = useTranslation();
-
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
-  const [logs, setLogs] = useState<Log[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  // Load vehicle + service logs
-  const loadData = async () => {
-    setLoading(true);
+  useFocusEffect(
+    useCallback(() => {
+      fetchVehicle();
+    }, [id])
+  );
 
-    // 1. Load vehicle
-    const { data: vData } = await supabase
-      .from("vehicles")
-      .select("id, name, make, model, plateNumber, year, odometer")
-      .eq("id", id)
-      .single();
+  const fetchVehicle = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("vehicles")
+        .select("*")
+        .eq("id", id)
+        .single();
 
-    setVehicle(vData ?? null);
-
-    // 2. Load logs
-    const { data: lData } = await supabase
-      .from("logs")
-      .select("id, type, title, date, cost, odometer")
-      .eq("vehicleId", id)
-      .order("date", { ascending: false });
-
-    setLogs(lData ?? []);
-    setLoading(false);
+      if (error) throw error;
+      setVehicle(data);
+    } catch (error) {
+      console.error("Error fetching vehicle:", error);
+      Alert.alert(t("vehicleDetail.error"), t("vehicleDetail.errorLoading"));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [id]);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchVehicle();
+    setRefreshing(false);
+  };
 
-  if (loading || !vehicle) {
+  const handleDelete = () => {
+    Alert.alert(
+      t("vehicleDetail.deleteTitle"),
+      t("vehicleDetail.deleteMessage"),
+      [
+        {
+          text: t("vehicleDetail.cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("vehicleDetail.delete"),
+          style: "destructive",
+          onPress: confirmDelete,
+        },
+      ]
+    );
+  };
+
+  const confirmDelete = async () => {
+    try {
+      setDeleting(true);
+
+      // Obriši sliku iz storage-a ako postoji
+      if (vehicle?.imageurl) {
+        const fileName = vehicle.imageurl.split("/").pop();
+        if (fileName) {
+          await supabase.storage.from("vehicle-images").remove([fileName]);
+        }
+      }
+
+      // Obriši vozilo iz baze
+      const { error } = await supabase.from("vehicles").delete().eq("id", id);
+
+      if (error) throw error;
+
+      Alert.alert(
+        t("vehicleDetail.deleteSuccess"),
+        t("vehicleDetail.deleteSuccessMessage"),
+        [{ text: "OK", onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error("Error deleting vehicle:", error);
+      Alert.alert(t("vehicleDetail.error"), t("vehicleDetail.errorDeleting"));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleEdit = () => {
+    router.push(`/vehicle/edit/${id}`);
+  };
+
+  if (loading && !vehicle) {
     return (
-      <Screen>
+      <Screen showBackButton>
         <View
-          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
           <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
@@ -82,187 +150,276 @@ export default function VehicleDetailsScreen() {
     );
   }
 
-  return (
-    <Screen>
-      <View style={{ flex: 1, padding: 16 }}>
-        {/* HEADER */}
-        <Text
-          style={{
-            fontSize: 24,
-            fontWeight: "700",
-            color: theme.colors.text,
-            marginBottom: 12,
-          }}
+  if (!vehicle) {
+    return (
+      <Screen showBackButton>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          {vehicle.make} {vehicle.model}
-        </Text>
+          <Text style={{ color: theme.colors.text }}>
+            {t("vehicleDetail.notFound")}
+          </Text>
+          <CarvixButton
+            label={t("vehicleDetail.goBack")}
+            onPress={() => router.back()}
+            style={{ marginTop: 16 }}
+          />
+        </View>
+      </Screen>
+    );
+  }
 
-        {/* VEHICLE INFO CARD */}
+  return (
+    <Screen showBackButton>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16 }}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+          />
+        }
+      >
+        {/* Slika vozila */}
+        {vehicle.imageurl ? (
+          <Image
+            source={{ uri: vehicle.imageurl }}
+            style={{
+              width: "100%",
+              height: 250,
+              borderRadius: 12,
+              marginBottom: 20,
+            }}
+            contentFit="cover"
+          />
+        ) : (
+          <View
+            style={{
+              width: "100%",
+              height: 250,
+              borderRadius: 12,
+              backgroundColor: theme.colors.card,
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 20,
+            }}
+          >
+            <Ionicons
+              name={getVehicleIcon(vehicle.type)}
+              size={80}
+              color={theme.colors.mutedText}
+            />
+          </View>
+        )}
+
+        {/* Naziv i tip */}
+        <View style={{ marginBottom: 24 }}>
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: "bold",
+              color: theme.colors.text,
+              marginBottom: 8,
+            }}
+          >
+            {vehicle.name}
+          </Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <Ionicons
+              name={getVehicleIcon(vehicle.type)}
+              size={20}
+              color={theme.colors.primary}
+            />
+            <Text
+              style={{
+                fontSize: 16,
+                color: theme.colors.mutedText,
+                textTransform: "capitalize",
+              }}
+            >
+              {t(`vehicleTypes.${vehicle.type}`)}
+            </Text>
+          </View>
+        </View>
+
+        {/* Osnovne informacije */}
         <View
           style={{
             backgroundColor: theme.colors.card,
+            borderRadius: 12,
             padding: 16,
-            borderRadius: 16,
-            marginBottom: 20,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-          }}
-        >
-          {vehicle.plateNumber && (
-            <InfoRow
-              icon="pricetag-outline"
-              label={t("vehicle.plate", "Tablice")}
-              value={vehicle.plateNumber}
-              color={theme.colors.text}
-            />
-          )}
-
-          {vehicle.year && (
-            <InfoRow
-              icon="calendar-outline"
-              label={t("vehicle.year", "Godište")}
-              value={String(vehicle.year)}
-              color={theme.colors.text}
-            />
-          )}
-
-          {vehicle.odometer !== null && (
-            <InfoRow
-              icon="speedometer-outline"
-              label={t("vehicle.odometer", "Kilometraža")}
-              value={`${vehicle.odometer} km`}
-              color={theme.colors.text}
-            />
-          )}
-        </View>
-
-        {/* ADD SERVICE BUTTON */}
-        <Pressable
-          onPress={() => router.push(`/vehicle/${id}/add-service` as any)}
-          style={{
-            backgroundColor: theme.colors.primary,
-            paddingVertical: 12,
-            borderRadius: 999,
             marginBottom: 16,
-            alignItems: "center",
           }}
         >
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: "600",
-              color: "#fff",
+              color: theme.colors.text,
+              marginBottom: 16,
             }}
           >
-            {t("vehicle.addService", "Dodaj servis")}
+            {t("vehicleDetail.basicInfo")}
           </Text>
-        </Pressable>
 
-        {/* SERVICE LOGS */}
-        <Text
-          style={{
-            fontSize: 18,
-            fontWeight: "700",
-            color: theme.colors.text,
-            marginBottom: 8,
-          }}
-        >
-          {t("vehicle.serviceHistory", "Istorija servisa")}
-        </Text>
-
-        {logs.length === 0 ? (
-          <Text style={{ color: theme.colors.mutedText, marginTop: 8 }}>
-            {t("vehicle.noServices", "Nema zabeleženih servisa")}
-          </Text>
-        ) : (
-          <FlatList
-            data={logs}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingBottom: 50 }}
-            renderItem={({ item }) => (
-              <View
-                style={{
-                  backgroundColor: theme.colors.card,
-                  padding: 16,
-                  borderRadius: 16,
-                  marginBottom: 12,
-                  borderWidth: 1,
-                  borderColor: theme.colors.border,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    fontWeight: "600",
-                    color: theme.colors.text,
-                  }}
-                >
-                  {item.title}
-                </Text>
-
-                <Text style={{ color: theme.colors.mutedText, marginTop: 4 }}>
-                  {new Date(item.date).toLocaleDateString()}
-                </Text>
-
-                {item.cost && (
-                  <Text
-                    style={{
-                      color: theme.colors.text,
-                      marginTop: 4,
-                      fontWeight: "500",
-                    }}
-                  >
-                    {t("vehicle.cost", "Trošak")}: {item.cost} RSD
-                  </Text>
-                )}
-
-                {item.odometer && (
-                  <Text style={{ color: theme.colors.mutedText, marginTop: 4 }}>
-                    {t("vehicle.atOdometer", "Na kilometraži")}: {item.odometer}{" "}
-                    km
-                  </Text>
-                )}
-              </View>
-            )}
+          <InfoRow
+            label={t("vehicleDetail.make")}
+            value={vehicle.make}
+            theme={theme}
           />
-        )}
-      </View>
+          <InfoRow
+            label={t("vehicleDetail.model")}
+            value={vehicle.model}
+            theme={theme}
+          />
+          {vehicle.platenumber && (
+            <InfoRow
+              label={t("vehicleDetail.plate")}
+              value={vehicle.platenumber}
+              theme={theme}
+            />
+          )}
+          {vehicle.year && (
+            <InfoRow
+              label={t("vehicleDetail.year")}
+              value={vehicle.year.toString()}
+              theme={theme}
+            />
+          )}
+          {vehicle.vin && (
+            <InfoRow
+              label={t("vehicleDetail.vin")}
+              value={vehicle.vin}
+              theme={theme}
+            />
+          )}
+        </View>
+
+        {/* Dodatne informacije */}
+        {(vehicle.odometer !== null && vehicle.odometer !== undefined) ||
+        vehicle.enginecapacity ||
+        vehicle.loadcapacity ? (
+          <View
+            style={{
+              backgroundColor: theme.colors.card,
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "600",
+                color: theme.colors.text,
+                marginBottom: 16,
+              }}
+            >
+              {t("vehicleDetail.additionalInfo")}
+            </Text>
+
+            {vehicle.odometer !== null && vehicle.odometer !== undefined && (
+              <InfoRow
+                label={t("vehicleDetail.odometer")}
+                value={`${vehicle.odometer} km`}
+                theme={theme}
+                icon="speedometer"
+              />
+            )}
+            {vehicle.enginecapacity && (
+              <InfoRow
+                label={t("vehicleDetail.engineCapacity")}
+                value={vehicle.enginecapacity}
+                theme={theme}
+                icon="flash"
+              />
+            )}
+            {vehicle.loadcapacity && (
+              <InfoRow
+                label={t("vehicleDetail.loadCapacity")}
+                value={vehicle.loadcapacity}
+                theme={theme}
+                icon="cube"
+              />
+            )}
+          </View>
+        ) : null}
+
+        {/* Action buttons */}
+        <View style={{ gap: 12, marginTop: 8, marginBottom: 32 }}>
+          <CarvixButton
+            label={t("vehicleDetail.services")}
+            onPress={() => router.push(`/vehicle/${id}/services`)}
+            icon="construct-outline"
+            variant="secondary"
+          />
+          <CarvixButton
+            label={t("vehicleDetail.edit")}
+            onPress={handleEdit}
+            icon="create-outline"
+          />
+          <CarvixButton
+            label={t("vehicleDetail.delete")}
+            onPress={handleDelete}
+            loading={deleting}
+            icon="trash-outline"
+            style={{
+              backgroundColor: theme.colors.danger,
+            }}
+          />
+        </View>
+      </ScrollView>
     </Screen>
   );
 }
 
-// Small reusable detail row
+// Helper komponenta za prikaz info redova
 function InfoRow({
-  icon,
   label,
   value,
-  color,
+  theme,
+  icon,
 }: {
-  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: string;
-  color: string;
+  theme: any;
+  icon?: keyof typeof Ionicons.glyphMap;
 }) {
   return (
     <View
       style={{
         flexDirection: "row",
+        justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 12,
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
       }}
     >
-      <Ionicons
-        name={icon}
-        size={18}
-        color={color}
-        style={{ marginRight: 10 }}
-      />
-      <Text style={{ color }}>{label}:</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        {icon && (
+          <Ionicons name={icon} size={18} color={theme.colors.mutedText} />
+        )}
+        <Text style={{ fontSize: 15, color: theme.colors.mutedText }}>
+          {label}
+        </Text>
+      </View>
       <Text
         style={{
-          color,
-          fontWeight: "600",
-          marginLeft: 6,
+          fontSize: 15,
+          fontWeight: "500",
+          color: theme.colors.text,
+          maxWidth: "60%",
+          textAlign: "right",
         }}
       >
         {value}

@@ -1,10 +1,12 @@
 import { useCarvixTheme } from "@/theme/ThemeProvider";
+import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   ActivityIndicator,
   Pressable,
   Text,
   TextStyle,
+  View,
   ViewStyle,
 } from "react-native";
 
@@ -16,6 +18,9 @@ type CarvixButtonProps = {
   variant?: "primary" | "secondary" | "outline";
   style?: ViewStyle;
   textStyle?: TextStyle;
+  icon?: keyof typeof Ionicons.glyphMap;
+  iconPosition?: "left" | "right";
+  iconSize?: number;
 };
 
 export function CarvixButton({
@@ -26,6 +31,9 @@ export function CarvixButton({
   variant = "primary",
   style,
   textStyle,
+  icon,
+  iconPosition = "left",
+  iconSize = 20,
 }: CarvixButtonProps) {
   const { theme } = useCarvixTheme();
 
@@ -42,6 +50,46 @@ export function CarvixButton({
     variant === "outline"
       ? { borderWidth: 1, borderColor: theme.colors.mutedText }
       : {};
+
+  const renderContent = () => {
+    if (loading) {
+      return <ActivityIndicator color={color} />;
+    }
+
+    if (icon) {
+      return (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          {iconPosition === "left" && (
+            <Ionicons name={icon} size={iconSize} color={color} />
+          )}
+          <Text
+            className="font-inter text-base font-semibold"
+            style={[{ color }, textStyle]}
+          >
+            {label}
+          </Text>
+          {iconPosition === "right" && (
+            <Ionicons name={icon} size={iconSize} color={color} />
+          )}
+        </View>
+      );
+    }
+
+    return (
+      <Text
+        className="font-inter text-base font-semibold"
+        style={[{ color }, textStyle]}
+      >
+        {label}
+      </Text>
+    );
+  };
 
   return (
     <Pressable
@@ -62,16 +110,7 @@ export function CarvixButton({
         style,
       ]}
     >
-      {loading ? (
-        <ActivityIndicator color={color} />
-      ) : (
-        <Text
-          className="font-inter text-base font-semibold"
-          style={[{ color }, textStyle]}
-        >
-          {label}
-        </Text>
-      )}
+      {renderContent()}
     </Pressable>
   );
 }

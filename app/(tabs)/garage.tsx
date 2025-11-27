@@ -2,12 +2,12 @@ import { Screen } from "@/components/Screen";
 import { supabase } from "@/lib/supabase";
 import { useCarvixTheme } from "@/theme/ThemeProvider";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FlatList, Pressable, Text, View } from "react-native";
 
-// tip vozila usklađen sa tabelom: userid, platenumber, createdat...
 type Vehicle = {
   id: string;
   name: string;
@@ -16,6 +16,9 @@ type Vehicle = {
   platenumber: string | null;
   year: number | null;
   odometer: number | null;
+  type: string | null;
+  nextservicedue: string | null;
+  imageurl: string | null;
 };
 
 export default function GarageScreen() {
@@ -24,14 +27,28 @@ export default function GarageScreen() {
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) setUserId(data.user.id);
+    };
+    fetchUser();
+  }, []);
 
   const loadVehicles = useCallback(async () => {
+    if (!userId) return;
+
     setLoading(true);
 
     const { data, error } = await supabase
       .from("vehicles")
-      .select("id, name, make, model, platenumber, year, odometer")
-      .order("createdat", { ascending: false });
+      .select(
+        "id, name, make, model, platenumber, year, odometer, type, nextservicedue, imageurl"
+      )
+      .eq("userid", userId)
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.log("Error loading vehicles:", error.message);
@@ -41,7 +58,7 @@ export default function GarageScreen() {
     }
 
     setLoading(false);
-  }, []);
+  }, [userId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -52,19 +69,17 @@ export default function GarageScreen() {
   return (
     <Screen>
       <View style={{ flex: 1, padding: 16 }}>
-        {/* HEADER */}
         <Text
           style={{
             fontSize: 24,
             fontWeight: "700",
             color: theme.colors.text,
-            marginBottom: 12,
+            marginBottom: 16,
           }}
         >
           {t("garage.title", "Tvoja garaža")}
         </Text>
 
-        {/* EMPTY VIEW */}
         {!loading && vehicles.length === 0 && (
           <View
             style={{
@@ -109,74 +124,145 @@ export default function GarageScreen() {
           </View>
         )}
 
-        {/* LISTA VOZILA */}
         <FlatList
+          key="garage-grid-2-columns"
           data={vehicles}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 120 }}
+          numColumns={2}
+          columnWrapperStyle={{ gap: 12 }}
+          contentContainerStyle={{ paddingBottom: 120, gap: 12 }}
+          refreshing={loading}
+          onRefresh={loadVehicles}
+          showsVerticalScrollIndicator={false}
           renderItem={({ item }) => (
             <Pressable
               onPress={() => router.push(`/vehicle/${item.id}` as any)}
               style={{
+                flex: 1,
                 backgroundColor: theme.colors.card,
-                padding: 16,
                 borderRadius: 16,
-                marginBottom: 12,
                 borderWidth: 1,
                 borderColor: theme.colors.border,
+                overflow: "hidden",
               }}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <View>
-                  {/* naslov: marka + model ili name */}
+              {/* SLIKA VOZILA */}
+              {item.imageurl ? (
+                <Image
+                  source={{ uri: item.imageurl }}
+                  style={{ width: "100%", height: 120 }}
+                  contentFit="cover"
+                />
+              ) : (
+                <View
+                  style={{
+                    width: "100%",
+                    height: 120,
+                    backgroundColor: theme.colors.background,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons
+                    name="car-outline"
+                    size={40}
+                    color={theme.colors.mutedText}
+                  />
+                </View>
+              )}
+
+              {/* INFO VOZILA */}
+              <View style={{ padding: 12 }}>
+                {/* TIP VOZILA - badge */}
+                <View
+                  style={{
+                    backgroundColor: theme.colors.primary + "20",
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 6,
+                    alignSelf: "flex-start",
+                    marginBottom: 8,
+                  }}
+                >
                   <Text
                     style={{
-                      fontSize: 18,
+                      fontSize: 10,
                       fontWeight: "600",
-                      color: theme.colors.text,
+                      color: theme.colors.primary,
+                      textTransform: "uppercase",
                     }}
                   >
-                    {item.make || item.model
-                      ? `${item.make ?? ""} ${item.model ?? ""}`.trim()
-                      : item.name}
+                    {item.type}
                   </Text>
-
-                  {/* tablice */}
-                  {item.platenumber && (
-                    <Text
-                      style={{
-                        color: theme.colors.mutedText,
-                        marginTop: 4,
-                      }}
-                    >
-                      {t("garage.plate", "Tablice")}: {item.platenumber}
-                    </Text>
-                  )}
-
-                  {/* godište */}
-                  {item.year && (
-                    <Text
-                      style={{
-                        color: theme.colors.mutedText,
-                        marginTop: 2,
-                      }}
-                    >
-                      {t("garage.year", "Godište")}: {item.year}
-                    </Text>
-                  )}
                 </View>
 
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={theme.colors.mutedText}
-                />
+                {/* NAZIV */}
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: theme.colors.text,
+                    marginBottom: 4,
+                  }}
+                  numberOfLines={1}
+                >
+                  {item.make || item.model
+                    ? `${item.make ?? ""} ${item.model ?? ""}`.trim()
+                    : item.name}
+                </Text>
+
+                {/* TABLICE */}
+                {item.platenumber && (
+                  <Text
+                    style={{
+                      color: theme.colors.mutedText,
+                      fontSize: 12,
+                      marginBottom: 2,
+                    }}
+                    numberOfLines={1}
+                  >
+                    {item.platenumber}
+                  </Text>
+                )}
+
+                {/* GODINA */}
+                {item.year && (
+                  <Text
+                    style={{
+                      color: theme.colors.mutedText,
+                      fontSize: 12,
+                      marginBottom: 2,
+                    }}
+                  >
+                    {item.year}
+                  </Text>
+                )}
+
+                {/* KILOMETRAŽA */}
+                {item.odometer !== null && (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginTop: 4,
+                      gap: 4,
+                    }}
+                  >
+                    <Ionicons
+                      name="speedometer-outline"
+                      size={14}
+                      color={theme.colors.mutedText}
+                    />
+                    <Text
+                      style={{
+                        color: theme.colors.mutedText,
+                        fontSize: 12,
+                      }}
+                    >
+                      {item.odometer.toLocaleString()} km
+                    </Text>
+                  </View>
+                )}
               </View>
             </Pressable>
           )}

@@ -19,7 +19,7 @@ export default function TabsLayout() {
   if (!user) return <Redirect href="/(auth)/login" />;
 
   // FAB prikazujemo SAMO na Garage ekranu
-  const showFab = pathname === "/garage";
+  const showFab = pathname === "/(tabs)/garage" || pathname.endsWith("/garage");
 
   return (
     <View style={{ flex: 1 }}>
@@ -50,7 +50,9 @@ export default function TabsLayout() {
 
       {showFab && (
         <Pressable
-          onPress={() => router.push("/add-vehicle")}
+          onPress={() => {
+            router.push("/add-vehicle");
+          }}
           style={{
             position: "absolute",
             right: 24,

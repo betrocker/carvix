@@ -1,24 +1,66 @@
 import { CarvixButton } from "@/components/CarvixButton";
 import { CarvixInput } from "@/components/CarvixInput";
+import { CarvixPicker } from "@/components/CarvixPicker";
 import { Screen } from "@/components/Screen";
-import { useAuth } from "@/context/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import { useCarvixTheme } from "@/theme/ThemeProvider";
+import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   Text,
+  View,
 } from "react-native";
 
 export default function AddVehicleScreen() {
   const { theme } = useCarvixTheme();
-  const { user } = useAuth();
   const { t } = useTranslation();
+
+  const vehicleTypes = [
+    { label: t("vehicleTypes.car"), value: "car", icon: "car" as const },
+    {
+      label: t("vehicleTypes.motorcycle"),
+      value: "motorcycle",
+      icon: "bicycle" as const,
+    },
+    { label: t("vehicleTypes.truck"), value: "truck", icon: "bus" as const },
+    {
+      label: t("vehicleTypes.bicycle"),
+      value: "bicycle",
+      icon: "bicycle-outline" as const,
+    },
+    {
+      label: t("vehicleTypes.quad"),
+      value: "quad",
+      icon: "car-sport" as const,
+    },
+    {
+      label: t("vehicleTypes.tractor"),
+      value: "tractor",
+      icon: "trail-sign" as const,
+    },
+  ];
+
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data?.user) setUserId(data.user.id);
+    };
+    fetchUser();
+  }, []);
+
+  const [vehicleType, setVehicleType] = useState("car");
 
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
@@ -27,18 +69,88 @@ export default function AddVehicleScreen() {
   const [odometer, setOdometer] = useState("");
   const [vin, setVin] = useState("");
 
+  const [loadCapacity, setLoadCapacity] = useState("");
+  const [engineCapacity, setEngineCapacity] = useState("");
+
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSave = async () => {
-    if (!make || !model || !plateNumber) {
+  const requiresPlate = !["bicycle"].includes(vehicleType);
+  const requiresVin = ["car", "truck", "motorcycle", "quad"].includes(
+    vehicleType
+  );
+
+  const pickImage = async () => {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
       Alert.alert(
-        t("addVehicle.validationTitle"),
-        t("addVehicle.validationRequired")
+        t("addVehicle.permissionTitle"),
+        t("addVehicle.permissionMessage")
       );
       return;
     }
 
-    if (!user) {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
+  const uploadImage = async (uri: string, vehicleId: string) => {
+    try {
+      const fileExt = uri.split(".").pop() || "jpg";
+      const fileName = `${vehicleId}-${Date.now()}.${fileExt}`;
+
+      // Koristi ArrayBuffer umesto blob-a
+      const response = await fetch(uri);
+      const arrayBuffer = await response.arrayBuffer();
+
+      const { error: uploadError } = await supabase.storage
+        .from("vehicle-images")
+        .upload(fileName, arrayBuffer, {
+          contentType: `image/${fileExt}`,
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from("vehicle-images")
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      throw error;
+    }
+  };
+
+  const handleSave = async () => {
+    if (!make || !model) {
+      Alert.alert(
+        t("addVehicle.validationTitle"),
+        t("addVehicle.validationBasic")
+      );
+      return;
+    }
+
+    if (requiresPlate && !plateNumber) {
+      Alert.alert(
+        t("addVehicle.validationTitle"),
+        t("addVehicle.validationPlate")
+      );
+      return;
+    }
+
+    if (!userId) {
       Alert.alert("Error", "User not logged in");
       return;
     }
@@ -51,29 +163,53 @@ export default function AddVehicleScreen() {
 
     setLoading(true);
 
-    const { error } = await supabase.from("vehicles").insert({
-      userid: user.id,
-      orgid: null,
-      type: "car",
-      name,
-      make,
-      model,
-      year: parsedYear,
-      platenumber: plateNumber,
-      vin: vin || null,
-      unit: "km",
-      odometer: parsedOdometer,
-      imageurl: null,
-    });
+    try {
+      const insertData: any = {
+        userid: userId,
+        orgid: null,
+        type: vehicleType,
+        name,
+        make,
+        model,
+        year: parsedYear,
+        platenumber: plateNumber || null,
+        vin: vin || null,
+        unit: "km",
+        odometer: parsedOdometer,
+        imageurl: null,
+      };
 
-    setLoading(false);
+      if (vehicleType === "truck" || vehicleType === "tractor") {
+        insertData.loadcapacity = loadCapacity || null;
+      }
+      if (vehicleType === "motorcycle" || vehicleType === "quad") {
+        insertData.enginecapacity = engineCapacity || null;
+      }
 
-    if (error) {
+      const { data, error } = await supabase
+        .from("vehicles")
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Upload image if selected
+      if (imageUri && data) {
+        const publicUrl = await uploadImage(imageUri, data.id);
+
+        await supabase
+          .from("vehicles")
+          .update({ imageurl: publicUrl })
+          .eq("id", data.id);
+      }
+
+      router.back();
+    } catch (error: any) {
       Alert.alert("Error", error.message);
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    router.back();
   };
 
   return (
@@ -103,6 +239,53 @@ export default function AddVehicleScreen() {
             {t("addVehicle.title")}
           </Text>
 
+          {/* IMAGE PICKER */}
+          <Pressable
+            onPress={pickImage}
+            style={{
+              marginBottom: 16,
+              borderRadius: 12,
+              borderWidth: 2,
+              borderStyle: "dashed",
+              borderColor: theme.colors.border,
+              overflow: "hidden",
+              backgroundColor: theme.colors.card,
+            }}
+          >
+            {imageUri ? (
+              <Image
+                source={{ uri: imageUri }}
+                style={{ width: "100%", height: 200 }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={{ padding: 40, alignItems: "center" }}>
+                <Ionicons
+                  name="image-outline"
+                  size={48}
+                  color={theme.colors.mutedText}
+                />
+                <Text
+                  style={{
+                    color: theme.colors.mutedText,
+                    marginTop: 8,
+                    fontSize: 16,
+                  }}
+                >
+                  {t("addVehicle.addImage")}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+
+          <CarvixPicker
+            label={t("addVehicle.vehicleType")}
+            value={vehicleType}
+            options={vehicleTypes}
+            onValueChange={setVehicleType}
+            placeholder={t("addVehicle.selectVehicleType")}
+          />
+
           <CarvixInput
             label={t("addVehicle.make")}
             placeholder={t("addVehicle.makePlaceholder")}
@@ -117,13 +300,15 @@ export default function AddVehicleScreen() {
             onChangeText={setModel}
           />
 
-          <CarvixInput
-            label={t("addVehicle.plate")}
-            placeholder="BG-123-AB"
-            value={plateNumber}
-            onChangeText={setPlateNumber}
-            autoCapitalize="characters"
-          />
+          {requiresPlate && (
+            <CarvixInput
+              label={t("addVehicle.plate")}
+              placeholder="BG-123-AB"
+              value={plateNumber}
+              onChangeText={setPlateNumber}
+              autoCapitalize="characters"
+            />
+          )}
 
           <CarvixInput
             label={t("addVehicle.year")}
@@ -141,20 +326,62 @@ export default function AddVehicleScreen() {
             onChangeText={setOdometer}
           />
 
-          <CarvixInput
-            label={t("addVehicle.vin")}
-            placeholder="WBA3D31020F123456"
-            value={vin}
-            onChangeText={setVin}
-            autoCapitalize="characters"
-          />
+          {requiresVin && (
+            <CarvixInput
+              label={t("addVehicle.vin")}
+              placeholder="WBA3D31020F123456"
+              value={vin}
+              onChangeText={setVin}
+              autoCapitalize="characters"
+            />
+          )}
 
-          <CarvixButton
-            label={t("addVehicle.save")}
-            onPress={handleSave}
-            loading={loading}
-            style={{ marginTop: 16 }}
-          />
+          {(vehicleType === "truck" || vehicleType === "tractor") && (
+            <CarvixInput
+              label={t("addVehicle.loadCapacity")}
+              placeholder="5000kg"
+              value={loadCapacity}
+              onChangeText={setLoadCapacity}
+            />
+          )}
+
+          {(vehicleType === "motorcycle" || vehicleType === "quad") && (
+            <CarvixInput
+              label={t("addVehicle.engineCapacity")}
+              placeholder="600cc"
+              value={engineCapacity}
+              onChangeText={setEngineCapacity}
+            />
+          )}
+
+          <View style={{ marginTop: 16, gap: 12 }}>
+            <CarvixButton
+              label={t("addVehicle.save")}
+              onPress={handleSave}
+              loading={loading}
+            />
+
+            <Pressable
+              onPress={() => router.back()}
+              style={{
+                padding: 16,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  color: theme.colors.text,
+                  fontSize: 16,
+                  fontWeight: "600",
+                }}
+              >
+                {t("addVehicle.cancel")}
+              </Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>

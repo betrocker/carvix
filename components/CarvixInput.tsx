@@ -9,6 +9,8 @@ type CarvixInputProps = TextInputProps & {
   rightIcon?: keyof typeof Ionicons.glyphMap;
   leftIcon?: keyof typeof Ionicons.glyphMap;
   onRightPress?: () => void;
+  multiline?: boolean;
+  numberOfLines?: number;
 };
 
 export function CarvixInput({
@@ -18,6 +20,8 @@ export function CarvixInput({
   leftIcon,
   onRightPress,
   style,
+  multiline = false,
+  numberOfLines = 1,
   ...props
 }: CarvixInputProps) {
   const { theme, mode } = useCarvixTheme();
@@ -54,21 +58,31 @@ export function CarvixInput({
 
         {/* INPUT */}
         <TextInput
+          multiline={multiline}
+          numberOfLines={numberOfLines}
           {...props}
           style={[
             {
               flex: 1,
               color: theme.colors.text,
               fontSize: 16,
+              ...(multiline
+                ? {
+                    minHeight: numberOfLines * 32,
+                    textAlignVertical: "top",
+                    paddingTop: 12,
+                  }
+                : {}),
             },
             style,
           ]}
           placeholderTextColor={placeholderColor}
+          accessibilityLabel={label ? `${label} input` : undefined}
         />
 
         {/* RIGHT ICON */}
         {rightIcon && (
-          <Pressable onPress={onRightPress}>
+          <Pressable onPress={onRightPress} hitSlop={8}>
             <Ionicons
               name={rightIcon}
               size={20}
